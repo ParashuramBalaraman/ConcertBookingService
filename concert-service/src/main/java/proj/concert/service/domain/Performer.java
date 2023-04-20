@@ -23,6 +23,14 @@ public class Performer {
     private String blurb;
 
     public Performer(){};
+    public Performer(Long id,String name,String imageName,Genre genre,String blurb){
+        this.performerId = id;
+        this.name=name;
+        this.imageName=imageName;
+        this.genre = genre;
+        this.blurb=blurb;
+
+    }
 
     public PerformerDTO translatetoDTO(){
         PerformerDTO performerDTO = new PerformerDTO(performerId,name,imageName,genre,blurb);

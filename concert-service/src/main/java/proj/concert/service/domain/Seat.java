@@ -6,7 +6,8 @@ import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
-
+@Entity
+@Table(name="SEATS")
 public class Seat{
 	@Id
 	@GeneratedValue
@@ -25,6 +26,12 @@ public class Seat{
 	public Seat(String label,BigDecimal cost){
 		this.label = label;
 		this.cost = cost;
+	}
+	public Seat(String label,boolean isBooked,LocalDateTime datetime,BigDecimal cost){
+		this.label=label;
+		this.isBooked = isBooked;
+		this.dateTime=datetime;
+		this.cost=cost;
 	}
 
 

@@ -9,7 +9,7 @@ import java.util.Objects;
 
 public class Seat{
 
-    private BookingStatus status;
+
 
 	public Seat(String label, boolean isBooked, LocalDateTime date, BigDecimal cost) {	
 	}	

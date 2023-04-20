@@ -18,24 +18,25 @@ import proj.concert.common.jackson.LocalDateTimeDeserializer;
 import proj.concert.common.jackson.LocalDateTimeSerializer;
 
 @Entity
+@Table(name="CONCERTS")
 public class Concert {
     @Id
     @GeneratedValue
-    @Column(name = "concertId", nullable = false, unique = true)
+    @Column(name = "ID", nullable = false, unique = true)
     private Long concertId;
-    @Column(name = "title", nullable = false)
+    @Column(name = "TITLE", nullable = false)
     private String title;
-    @Column(name = "imageName", nullable = false)
+    @Column(name = "IMAGE_NAME", nullable = false)
     private String imageName;
-    @Column(name = "blurb", nullable = false)
+    @Column(name = "BLURB", nullable = false)
     private String blurb;
     @ManyToOne(fetch =FetchType.LAZY,cascade = {CascadeType.PERSIST,CascadeType.REMOVE})//might be one to many need to recheck
     @JoinTable(name = "concert performer", joinColumns = @JoinColumn(name = "concertId"))
-    @Column(name = "performers", nullable = false, unique = true)
+    @Column(name = "PERFORMERS", nullable = false, unique = true)
 
     private Set<Performer> performers;
     @ElementCollection
-    @CollectionTable(name = "concertDates")
+    @CollectionTable(name = "CONCERT_DATES")
 
     private Set<LocalDateTime> dates;
 

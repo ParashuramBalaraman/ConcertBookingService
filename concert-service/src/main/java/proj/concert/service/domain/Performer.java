@@ -6,20 +6,20 @@ import proj.concert.common.types.Genre;
 import javax.persistence.*;
 import java.util.concurrent.atomic.AtomicLong;
 @Entity
-@Table(name="Performers")
+@Table(name="PERFORMERS")
 public class Performer {
     @Id
     @GeneratedValue
-    @Column(name="performerId",nullable = false)
+    @Column(name="ID",nullable = false)
     private Long performerId;
-    @Column(name = "name",nullable = false)
+    @Column(name = "NAME",nullable = false)
     private String name;
-    @Column(name = "imageName",nullable = false)
+    @Column(name = "IMAGE_NAME",nullable = false)
     private String imageName;
-    @Column(name = "genre",nullable = false)
+    @Column(name = "GENRE",nullable = false)
     @Enumerated(EnumType.STRING)
     private Genre genre;
-    @Column(name = "blurb")
+    @Column(name = "BLURB")
     private String blurb;
 
     public Performer(){};

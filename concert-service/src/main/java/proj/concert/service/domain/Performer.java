@@ -9,22 +9,24 @@ import java.util.concurrent.atomic.AtomicLong;
 @Table(name="PERFORMERS")
 public class Performer {
     @Id
-    @GeneratedValue
-    @Column(name="ID",nullable = false)
-    private Long performerId;
-    @Column(name = "NAME",nullable = false)
+
+    @Column(name="ID")
+    private Long Id;
+    @Column(name = "NAME")
     private String name;
-    @Column(name = "IMAGE_NAME",nullable = false)
+    @Column(name = "IMAGE_NAME")
     private String imageName;
-    @Column(name = "GENRE",nullable = false)
+    @Column(name = "GENRE")
     @Enumerated(EnumType.STRING)
     private Genre genre;
     @Column(name = "BLURB")
     private String blurb;
 
+
+
     public Performer(){};
     public Performer(Long id,String name,String imageName,Genre genre,String blurb){
-        this.performerId = id;
+        this.Id = id;
         this.name=name;
         this.imageName=imageName;
         this.genre = genre;
@@ -33,12 +35,12 @@ public class Performer {
     }
 
     public PerformerDTO translatetoDTO(){
-        PerformerDTO performerDTO = new PerformerDTO(performerId,name,imageName,genre,blurb);
+        PerformerDTO performerDTO = new PerformerDTO(Id,name,imageName,genre,blurb);
         return performerDTO;
     }
 
-    public Long getId(){return performerId;}
-    public void setId(Long id){this.performerId=id;}
+    public Long getId(){return Id;}
+    public void setId(Long id){this.Id=id;}
     public String getName(){return this.name;}
     public void setName(String name){this.name = name;}
     public String getImageName(){return this.imageName;}

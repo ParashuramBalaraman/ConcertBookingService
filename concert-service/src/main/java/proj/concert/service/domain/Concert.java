@@ -30,7 +30,7 @@ public class Concert {
     private String imageName;
     @Column(name = "BLURB", nullable = false)
     private String blurb;
-    @ManyToOne(fetch =FetchType.LAZY,cascade = {CascadeType.PERSIST,CascadeType.REMOVE})//might be one to many need to recheck
+    @OneToMany(fetch =FetchType.LAZY,cascade = {CascadeType.PERSIST,CascadeType.REMOVE})//might be one to many need to recheck
     @JoinTable(name = "concert performer", joinColumns = @JoinColumn(name = "concertId"))
     private Set<Performer> performers;
     @ElementCollection

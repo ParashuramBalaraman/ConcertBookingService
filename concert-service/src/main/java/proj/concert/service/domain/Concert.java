@@ -32,8 +32,6 @@ public class Concert {
     private String blurb;
     @ManyToOne(fetch =FetchType.LAZY,cascade = {CascadeType.PERSIST,CascadeType.REMOVE})//might be one to many need to recheck
     @JoinTable(name = "concert performer", joinColumns = @JoinColumn(name = "concertId"))
-    @Column(name = "PERFORMERS", nullable = false, unique = true)
-
     private Set<Performer> performers;
     @ElementCollection
     @CollectionTable(name = "CONCERT_DATES")

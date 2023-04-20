@@ -36,8 +36,7 @@ public class Concert {
     private Set<Performer> performers;
     @ElementCollection
     @CollectionTable(name = "concertDates")
-    @JsonSerialize(using = LocalDateTimeSerializer.class)
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+
     private Set<LocalDateTime> dates;
 
     public Concert(){}

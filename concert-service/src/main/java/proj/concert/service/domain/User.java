@@ -1,18 +1,29 @@
 package proj.concert.service.domain;
 
+import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-
+@Entity
+@Table(name="USERS")
 public class User {
-    private AtomicLong id;//username could function as id may look at changing over later
+    @Id
+    @GeneratedValue
+    @Column(name = "ID",nullable = false,unique = true)
+    private Long id;
+    @Column(name="USERNAME",nullable = false,unique = true)
     private String username;
+    @Column(name="PASSWORD",nullable = false)
     //in an ideal world the password would be hashed and not strored as plin text but that seems outside the scope of the project.
     private String password;
-    private HashSet<Booking> bookings;
+    @OneToMany(mappedBy = "USER",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
+    private Set<Booking> bookings;
+
+    @Column(name = "VERSION")
+    Long version;
 
 public User(){}
-    public AtomicLong getId(){return id;}
+
     public String getUsername(){return username;}
     public void setUsername(String name){username = name;}
     public String getPassword(){return password;}

@@ -10,6 +10,7 @@ import javax.persistence.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.dynamic.loading.InjectionClassLoader;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import proj.concert.common.dto.ConcertDTO;
@@ -21,8 +22,7 @@ import proj.concert.common.jackson.LocalDateTimeSerializer;
 @Table(name="CONCERTS")
 public class Concert {
     @Id
-    @GeneratedValue
-    @Column(name = "ID", nullable = false, unique = true)
+    @Column(name = "ID")
     private Long concertId;
     @Column(name = "TITLE", nullable = false)
     private String title;
@@ -30,14 +30,15 @@ public class Concert {
     private String imageName;
     @Column(name = "BLURB", nullable = false)
     private String blurb;
-    @OneToMany(fetch =FetchType.LAZY,cascade = {CascadeType.PERSIST,CascadeType.REMOVE})//might be one to many need to recheck
-    @JoinTable(name = "concert performer", joinColumns = @JoinColumn(name = "concertId"))
-    private Set<Performer> performers;
+
     @ElementCollection
     @CollectionTable(name = "CONCERT_DATES")
 
     private Set<LocalDateTime> dates;
-
+    @OneToMany(cascade = {CascadeType.PERSIST,CascadeType.REMOVE})
+    @JoinTable(name="CONCERT_PERFORMER",joinColumns = @JoinColumn(name="CONCERT_ID")
+            ,inverseJoinColumns = @JoinColumn(name="PERFORMER_ID"))
+    private Set<Performer> performers;
     public Concert(){}
     public Concert(Long id,String title,String imageName,String blurb,Set<LocalDateTime>dates){
         this.concertId = id;

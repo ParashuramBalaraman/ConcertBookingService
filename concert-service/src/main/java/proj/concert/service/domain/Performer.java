@@ -4,22 +4,21 @@ import proj.concert.common.dto.PerformerDTO;
 import proj.concert.common.types.Genre;
 
 import javax.persistence.*;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.*;
 @Entity
 @Table(name="PERFORMERS")
 public class Performer {
     @Id
-
-    @Column(name="ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long Id;
-    @Column(name = "NAME")
+@Column(name="NAME")
     private String name;
     @Column(name = "IMAGE_NAME")
     private String imageName;
-    @Column(name = "GENRE")
+@Column(name="GENRE")
     @Enumerated(EnumType.STRING)
     private Genre genre;
-    @Column(name = "BLURB")
+    @Column(name = "BLURB",length = 1000)//length allows the blurb to be over 1000chars
     private String blurb;
 
 

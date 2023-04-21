@@ -36,10 +36,9 @@ public class Concert {
 
     private Set<LocalDateTime> dates;
     @OneToMany(cascade = {CascadeType.PERSIST})
-    @JoinTable(name="CONCERT_PERFORMER",joinColumns = @JoinColumn(name="CONCERT_ID"),
-            inverseJoinColumns = @JoinColumn(name="PERFORMER_ID"))
+    //@JoinTable(name="CONCERT_PERFORMER",joinColumns = @JoinColumn(name="CONCERT_ID"),inverseJoinColumns = @JoinColumn(name="PERFORMER_ID"))
 
-    private Set<Performer> performers=new HashSet<Performer>();
+    private Set<Performer> performers;
     public Concert(){}
     public Concert(Long id,String title,String imageName,String blurb,Set<LocalDateTime>dates){
         this.concertId = id;

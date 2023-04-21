@@ -2,46 +2,40 @@ package proj.concert.service.domain;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicMarkableReference;
 
 import javax.persistence.*;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import net.bytebuddy.asm.Advice;
-import net.bytebuddy.dynamic.loading.InjectionClassLoader;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import proj.concert.common.dto.ConcertDTO;
-import proj.concert.common.dto.PerformerDTO;
-import proj.concert.common.jackson.LocalDateTimeDeserializer;
-import proj.concert.common.jackson.LocalDateTimeSerializer;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+
+
 
 @Entity
 @Table(name="CONCERTS")
 public class Concert {
     @Id
-    @Column(name = "ID")
-    private Long concertId;
-    @Column(name = "TITLE", nullable = false)
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    private Long id;
+@Column(name="TITLE")
     private String title;
-    @Column(name = "IMAGE_NAME", nullable = false)
+    @Column(name = "IMAGE_NAME")
     private String imageName;
-    @Column(name = "BLURB", nullable = false)
+    @Column(name = "BLURB",length = 1000)//allows blurb to be longer than 100 chars
     private String blurb;
 
     @ElementCollection
-    @CollectionTable(name = "CONCERT_DATES")
-
-    private Set<LocalDateTime> dates;
-    @OneToMany(cascade = {CascadeType.PERSIST,CascadeType.REMOVE})
-    @JoinTable(name="CONCERT_PERFORMER",joinColumns = @JoinColumn(name="CONCERT_ID")
-            ,inverseJoinColumns = @JoinColumn(name="PERFORMER_ID"))
-    private Set<Performer> performers;
+    @CollectionTable(name = "CONCERT_DATES",joinColumns = @JoinColumn(name="CONCERT_ID"))
+    @Column(name="DATE")
+    private Set<LocalDateTime> dates = new HashSet<>();
+    @ManyToMany(cascade =CascadeType.PERSIST)
+    @JoinTable(name = "CONCERT_PERFORMER",joinColumns = @JoinColumn(name= "CONCERT_ID"),inverseJoinColumns = @JoinColumn(name = "PERFORMER_ID"))
+    @Column(name = "PERFORMER_ID")
+    private Set<Performer> performers = new HashSet<>();
     public Concert(){}
     public Concert(Long id,String title,String imageName,String blurb,Set<LocalDateTime>dates){
-        this.concertId = id;
+        this.id = id;
         this.title = title;
         this.imageName = imageName;
         this.blurb = blurb;
@@ -49,28 +43,27 @@ public class Concert {
 
     }
     public Long getId() {
-        return concertId;
+        return id;
     }
 
-    public void setId(Long index) {
-        concertId = index;
-    }
+    public void setId(Long id) {this.id = id;}
+
 
 
     public String getTitle() {
         return title;
     }
 
-    public void setTitle(String name) {
-        title = name;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getImageName() {
         return imageName;
     }
 
-    public void setImageName(String name) {
-        imageName = name;
+    public void setImageName(String imageName) {
+        this.imageName = imageName;
     }
 
     public String getBlurb() {
@@ -94,22 +87,23 @@ public class Concert {
 
     public void setDates(Set<LocalDateTime> dates) {this.dates = dates;}
 
-    ;
 
-    public ConcertDTO translateToDTO() {
-        ConcertDTO concertDTO = new ConcertDTO(concertId, title, imageName, blurb);
-        ArrayList<PerformerDTO> performersAL = new ArrayList<PerformerDTO>();
-        for (Performer p : performers) {
-            performersAL.add(p.translatetoDTO());
-        }
-        concertDTO.setPerformers(performersAL);
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Concert))
+            return false;
+        if (obj == this)
+            return true;
 
-        ArrayList<LocalDateTime> datesAL = new ArrayList<LocalDateTime>();
-        for (LocalDateTime d : dates) {
-            datesAL.add(d);
-        }
-        concertDTO.setDates(datesAL);
-        return concertDTO;
+        Concert rhs = (Concert) obj;
+        return new EqualsBuilder().
+                append(title, rhs.title).
+                isEquals();
+    }
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 31).
+                append(title).hashCode();
     }
 }
 

@@ -1,6 +1,7 @@
 package proj.concert.service.domain.mapper;
 
 import proj.concert.common.dto.ConcertDTO;
+import proj.concert.common.dto.ConcertSummaryDTO;
 import proj.concert.common.dto.PerformerDTO;
 import proj.concert.service.domain.Concert;
 import proj.concert.service.domain.Performer;
@@ -11,21 +12,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class ConcertMapper {
-    public static Concert toDM(ConcertDTO concertDTO){
-        Concert c= new Concert(concertDTO.getId(),
-                concertDTO.getTitle(),
-                concertDTO.getImageName(),
-                concertDTO.getBlurb(),
-                Set.copyOf(concertDTO.getDates()));
-        Set<Performer> performers = new HashSet<Performer>();
 
-        for(PerformerDTO p:concertDTO.getPerformers()){
-            performers.add(PerformerMapper.toDM(p));
-        }
-        return c;
-    }
-
-    public static ConcertDTO ToDTO(Concert c) {
+    //don't need a concertdto to concert mapper as it is never required
+    public static ConcertDTO toDTO(Concert c) {
         ConcertDTO concertDTO = new ConcertDTO(c.getId(), c.getTitle(), c.getImageName(), c.getBlurb());
         ArrayList<PerformerDTO> performersAL = new ArrayList<PerformerDTO>();
         for (Performer p : c.getPerformers()) {
@@ -39,5 +28,8 @@ public class ConcertMapper {
         }
         concertDTO.setDates(datesAL);
         return concertDTO;
+    }
+    public static ConcertSummaryDTO toConcertSummaryDTO(Concert c){
+        return new ConcertSummaryDTO(c.getId(),c.getTitle(),c.getImageName());
     }
 }

@@ -25,12 +25,13 @@ public class Concert {
     @Column(name = "BLURB",length = 1000)//allows blurb to be longer than 100 chars
     private String blurb;
 
-    @ElementCollection
+    @ElementCollection(fetch=FetchType.EAGER)//want to get all associated dates when initizlized
     @CollectionTable(name = "CONCERT_DATES",joinColumns = @JoinColumn(name="CONCERT_ID"))
     @Column(name="DATE")
     private Set<LocalDateTime> dates = new HashSet<>();
     @ManyToMany(cascade =CascadeType.PERSIST)
     @JoinTable(name = "CONCERT_PERFORMER",joinColumns = @JoinColumn(name= "CONCERT_ID"),inverseJoinColumns = @JoinColumn(name = "PERFORMER_ID"))
+    @Fetch(FetchMode.SUBSELECT)
     @Column(name = "PERFORMER_ID")
     private Set<Performer> performers = new HashSet<>();
     public Concert(){}
@@ -106,9 +107,6 @@ public class Concert {
                 append(title).hashCode();
     }
 
-    public ConcertDTO translateToDTO() {
-        ConcertDTO concertDTO = new ConcertDTO(id, title, imageName, blurb);
-        return concertDTO;
-    }
+
 }
 

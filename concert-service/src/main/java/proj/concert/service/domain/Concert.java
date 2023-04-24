@@ -9,7 +9,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-
+import proj.concert.common.dto.ConcertDTO;
 
 
 @Entity
@@ -104,6 +104,11 @@ public class Concert {
     public int hashCode() {
         return new HashCodeBuilder(17, 31).
                 append(title).hashCode();
+    }
+
+    public ConcertDTO translateToDTO() {
+        ConcertDTO concertDTO = new ConcertDTO(id, title, imageName, blurb);
+        return concertDTO;
     }
 }
 

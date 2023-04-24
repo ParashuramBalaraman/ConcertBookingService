@@ -33,11 +33,6 @@ public class Performer {
 
     }
 
-    public PerformerDTO translatetoDTO(){
-        PerformerDTO performerDTO = new PerformerDTO(Id,name,imageName,genre,blurb);
-        return performerDTO;
-    }
-
     public Long getId(){return Id;}
     public void setId(Long id){this.Id=id;}
     public String getName(){return this.name;}

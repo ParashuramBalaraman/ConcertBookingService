@@ -3,6 +3,7 @@ package proj.concert.service.services;
 import java.net.URI;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
@@ -16,9 +17,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import proj.concert.common.dto.PerformerDTO;
+import proj.concert.common.dto.UserDTO;
 import proj.concert.service.domain.Concert;
 import proj.concert.service.domain.Performer;
 import proj.concert.service.domain.User;
+import proj.concert.service.domain.mapper.UserMapper;
 
 
 @Path("/concert-service")
@@ -99,21 +102,25 @@ public class ConcertResource {
 
     @POST
     @Path("/login")
+    @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response login(String username, String password){
+    public Response login(UserDTO client){
         EntityManager em = PersistenceManager.instance().createEntityManager();
         try{
+            em.getTransaction().begin();
             TypedQuery<User> userQuery = em.createQuery("select u from User u", User.class);
             List<User> users = userQuery.getResultList();
+            em.getTransaction().commit();
+            UserMapper um = new UserMapper();
             for (User user : users){
-                if (user.getUsername() == username){
-                    if(user.getPassword() == password){
-                        NewCookie n = new NewCookie("auth", "auth");
-                        return Response.ok(user).cookie(n).build();
-                    }
+                if (user.getUsername().equals(client.getUsername()) && user.getPassword().equals(client.getPassword())){
+                    UUID value = UUID.randomUUID();
+                    NewCookie n = new NewCookie("auth", value.toString());
+                    UserDTO us = um.toDTO(user);
+                    return Response.ok(us).cookie(n).build();
                 }
             }
-            throw new WebApplicationException((Response.Status.UNAUTHORIZED));
+            return Response.status(401).build();
         }
         finally{
             em.close();

@@ -66,8 +66,19 @@ public class ConcertResource {
         }
     }
 
-    public Response getConcertSummaries(){
-        return null;
+    @GET
+    @Path("/concerts/summaries")
+    @Produces((MediaType.APPLICATION_JSON))
+    public Response getConcertSummaries() {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        try{
+            TypedQuery<Concert> concertQuery = em.createQuery("select c from Concert c", Concert.class);
+
+            return null;
+        }
+        finally {
+            em.close();
+        }
     }
 
     @GET

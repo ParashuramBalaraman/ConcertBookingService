@@ -175,7 +175,7 @@ public class ConcertResource {
                                         seatDTOS.add(seatDTO);
 
                                     }
-                                    //Create a new bookingDTO, then convert into a booking object
+                                    //Create a new bookingDTO and then convert into a booking object
                                     BookingDTO bDTO = new BookingDTO(booking.getConcertId(), booking.getDate(), seatDTOS);
                                     BookingMapper bm = new BookingMapper();
                                     Booking b = bm.toDM(bDTO);

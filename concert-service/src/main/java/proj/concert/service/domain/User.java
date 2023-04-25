@@ -24,9 +24,6 @@ public class User {
     @Column(name = "VERSION")
     Long version;
 
-    @Column(name = "COOKIE_NAME")
-    private String cookieName;
-
     @Column(name = "COOKIE_VALUE")
     private String cookieValue;
 
@@ -41,8 +38,6 @@ public User(){}
     public String getPassword(){return password;}
     public void setPassword(String pw){password = pw;}
 
-    public String getCookieName(){return cookieName;}
-    public void setCookieName(String cn){cookieName = cn;}
     public String getCookieValue(){return cookieValue;}
     public void setCookieValue(String cv){cookieValue = cv;}
 

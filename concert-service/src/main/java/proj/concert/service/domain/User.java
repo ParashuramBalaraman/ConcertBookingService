@@ -1,6 +1,8 @@
 package proj.concert.service.domain;
 
 import javax.persistence.*;
+import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.NewCookie;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -22,6 +24,12 @@ public class User {
     @Column(name = "VERSION")
     Long version;
 
+    @Column(name = "COOKIE_NAME")
+    private String cookieName;
+
+    @Column(name = "COOKIE_VALUE")
+    private String cookieValue;
+
 public User(){}
     public User(String username,String password){
     this.username=username;
@@ -32,6 +40,13 @@ public User(){}
     public void setUsername(String name){username = name;}
     public String getPassword(){return password;}
     public void setPassword(String pw){password = pw;}
+
+    public String getCookieName(){return cookieName;}
+    public void setCookieName(String cn){cookieName = cn;}
+    public String getCookieValue(){return cookieValue;}
+    public void setCookieValue(String cv){cookieValue = cv;}
+
+
 
     //public Set<Booking> getBookings(){return bookings;}
     //public void addBooking(Booking booking){bookings.add(booking);}

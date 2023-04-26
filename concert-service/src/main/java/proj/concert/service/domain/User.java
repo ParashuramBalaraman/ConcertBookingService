@@ -21,6 +21,9 @@ public class User {
     @OneToMany(cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)//user can have many bookings but a booking can only belong to one user
     private Set<Booking> bookings;
 
+    @Column(name="VERSION")
+    private Long version;
+
     @Column(name = "COOKIE_VALUE")
     private String cookieValue;
 

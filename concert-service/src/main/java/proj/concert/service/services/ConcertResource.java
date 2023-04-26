@@ -150,14 +150,11 @@ public class ConcertResource {
                 return Response.status(401).build();
             }
             em.getTransaction().begin();
-            System.out.println("validUser");
             TypedQuery<User> userQuery = em.createQuery("select u from User u where u.cookieValue like :clientID", User.class)
                     .setParameter("clientID", clientID.getValue()).setMaxResults(1);
-            System.out.println("validUser2");
             List<User> users = userQuery.getResultList();
             User user = users.get(0);
             em.getTransaction().commit();
-            System.out.println(user.getUsername() + " " +  user.getCookieValue());
             //Get all concerts
             em.getTransaction().begin();
             TypedQuery<Concert> concertQuery = em.createQuery("select c from Concert c", Concert.class);
@@ -171,19 +168,28 @@ public class ConcertResource {
                         if (date.equals(booking.getDate())){
                             //Go through all the seats to see if the seats looking to be booked are already booked
                             em.getTransaction().begin();
-                            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.label in :inclList", Seat.class)
-                                    .setParameter("inclList", booking.getSeatLabels());
+                            //Find the seats that are available on the date of the booking
+                            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.dateTime like :date", Seat.class)
+                                    .setParameter("date", booking.getDate());
                             List<Seat> seats = seatQuery.getResultList();
+                            List<Seat> bSeats = new ArrayList<Seat>();
+                            //Go through all seats that are available, find the ones which we want to book and if they aren't already booked add them to bSeats
                             for (Seat seat : seats){
-                                if (seat.getIsBooked() == true){
-                                    return Response.status(403).build();
+                                for (String label : booking.getSeatLabels()){
+                                    if (seat.getLabel().equals(label)){
+                                        if (seat.getIsBooked() == true){
+                                            return Response.status(403).build();
+                                        }
+                                        bSeats.add(seat);
+                                    }
                                 }
+
                             }
                             //All seats are available, go back through each seat and change their status to booked
                             //Create a new arraylist for seatDTOs then convert all seats in the list to seatDTOs and add them to the list
                             List<SeatDTO> seatDTOS = new ArrayList<SeatDTO>();
                             SeatMapper sm = new SeatMapper();
-                            for (Seat seat : seats){
+                            for (Seat seat : bSeats){
                                 seat.setIsBooked(true);
                                 SeatDTO seatDTO = sm.toDTO(seat);
                                 seatDTOS.add(seatDTO);
@@ -192,8 +198,9 @@ public class ConcertResource {
                             BookingDTO bDTO = new BookingDTO(booking.getConcertId(), booking.getDate(), seatDTOS);
                             BookingMapper bm = new BookingMapper();
                             Booking b = bm.toDM(bDTO);
+                            user.addBooking(b);
                             em.getTransaction().commit();
-                            return Response.created(URI.create("/concert-service" + b.getId())).build();
+                            return Response.created(URI.create("/concert-service/bookings/" + b.getId())).build();
                         }
                     }
                 }
@@ -204,8 +211,35 @@ public class ConcertResource {
             em.close();
         }
     }
-
-    public Response getBookingById(long id){return null;}
+    @GET
+    @Path("/bookings/{id}")
+    @Produces((MediaType.APPLICATION_JSON))
+    public Response getBookingById(@PathParam("id") long id, @CookieParam("auth") Cookie clientID){
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        try{
+            //Check if user is logged in
+            if (clientID != null){
+                em.getTransaction().begin();
+                TypedQuery<User> userQuery = em.createQuery("select u from User u where u.cookieValue like :clientID", User.class)
+                        .setParameter("clientID", clientID.getValue()).setMaxResults(1);
+                List<User> users = userQuery.getResultList();
+                User user = users.get(0);
+                em.getTransaction().commit();
+                //Checking if the booking was made by the user that is currently logged in
+                for (Booking booking : user.getBookings()){
+                    if (booking.getId().equals(id)){
+                        BookingMapper bm = new BookingMapper();
+                        BookingDTO bDTO = bm.toDTO(booking);
+                        return Response.ok(bDTO).build();
+                    }
+                }
+            }
+            return Response.status(403).build();
+        }
+        finally{
+            em.close();
+        }
+    }
 
     public Response getAllBookings(){return null;}
 

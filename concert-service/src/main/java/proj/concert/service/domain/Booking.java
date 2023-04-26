@@ -19,8 +19,7 @@ public class Booking {
 private Long concertId;
 @Column(name="DATETIME")
     private LocalDateTime dateTime;
-    @OneToMany
-    //some form of joincolumn or join table
+    @OneToMany(cascade = CascadeType.PERSIST,fetch = FetchType.LAZY)
     private Set<Seat> seats;
 
     public Booking(){}

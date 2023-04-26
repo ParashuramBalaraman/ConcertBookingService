@@ -18,11 +18,21 @@ import javax.persistence.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 import proj.concert.common.dto.*;
 import proj.concert.service.domain.*;
 import proj.concert.service.domain.mapper.BookingMapper;
 import proj.concert.service.domain.mapper.SeatMapper;
+import proj.concert.common.dto.PerformerDTO;
+import proj.concert.common.dto.UserDTO;
+import proj.concert.service.domain.Concert;
+import proj.concert.service.domain.Performer;
+import proj.concert.service.domain.User;
+
 import proj.concert.service.domain.mapper.UserMapper;
+import proj.concert.service.domain.mapper.ConcertMapper;
+import proj.concert.service.domain.mapper.PerformerMapper;
+
 
 
 @Path("/concert-service")
@@ -42,7 +52,7 @@ public class ConcertResource {
             if (concert == null){
                 throw new WebApplicationException((Response.Status.NOT_FOUND));
             }
-            return Response.ok(concert.translateToDTO()).build();
+            return Response.ok(ConcertMapper.toDTO(concert)).build();
         } finally{
             em.close();
         }
@@ -80,7 +90,7 @@ public class ConcertResource {
             if (performer == null){
                 throw new WebApplicationException((Response.Status.NOT_FOUND));
             }
-            return Response.ok(performer.translatetoDTO()).build();
+            return Response.ok(PerformerMapper.toDTO(performer)).build();
         } finally{
             em.close();
         }

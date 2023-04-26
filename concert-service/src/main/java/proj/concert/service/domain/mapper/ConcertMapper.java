@@ -18,7 +18,7 @@ public class ConcertMapper {
         ConcertDTO concertDTO = new ConcertDTO(c.getId(), c.getTitle(), c.getImageName(), c.getBlurb());
         ArrayList<PerformerDTO> performersAL = new ArrayList<PerformerDTO>();
         for (Performer p : c.getPerformers()) {
-            performersAL.add(p.translatetoDTO());
+            performersAL.add(PerformerMapper.toDTO(p));
         }
         concertDTO.setPerformers(performersAL);
 

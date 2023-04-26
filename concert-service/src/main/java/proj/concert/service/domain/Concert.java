@@ -25,13 +25,14 @@ public class Concert {
     @Column(name = "BLURB",length = 1000)//allows blurb to be longer than 100 chars
     private String blurb;
 
-    @ElementCollection(fetch=FetchType.EAGER)//want to get all associated dates when initizlized
-    @CollectionTable(name = "CONCERT_DATES",joinColumns = @JoinColumn(name="CONCERT_ID"))
+    //can use element collection for handling date relation as it isn't an entity
+    @ElementCollection(fetch=FetchType.EAGER)//want to get all associated dates when found initially
+    @CollectionTable(name = "CONCERT_DATES",joinColumns = @JoinColumn(name="CONCERT_ID"))//date tied to primary key of concert
     @Column(name="DATE")
     private Set<LocalDateTime> dates = new HashSet<>();
-    @ManyToMany(cascade =CascadeType.PERSIST)
-    @JoinTable(name = "CONCERT_PERFORMER",joinColumns = @JoinColumn(name= "CONCERT_ID"),inverseJoinColumns = @JoinColumn(name = "PERFORMER_ID"))
-    @Fetch(FetchMode.SUBSELECT)
+    @ManyToMany(cascade =CascadeType.PERSIST)//concerts can have many performers and performers can be attatched to mulitple concerts
+    @JoinTable(name = "CONCERT_PERFORMER",joinColumns = @JoinColumn(name= "CONCERT_ID"),inverseJoinColumns = @JoinColumn(name = "PERFORMER_ID"))//link the two primary key columns
+    @Fetch(FetchMode.SUBSELECT)//use subselect for scalability performance
     @Column(name = "PERFORMER_ID")
     private Set<Performer> performers = new HashSet<>();
     public Concert(){}

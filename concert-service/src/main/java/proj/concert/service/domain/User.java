@@ -16,14 +16,14 @@ public class User {
     @Column(name="USERNAME",nullable = false,unique = true)
     private String username;
     @Column(name="PASSWORD",nullable = false)
-    //in an ideal world the password would be hashed and not strored as plin text but that seems outside the scope of the project.
+    //in an ideal world the password would be hashed and not strored as plain text but that seems outside the scope of the project.
     private String password;
 
-    @OneToMany(cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)//user can have many bookings but a booking can only belong to one user
     private Set<Booking> bookings;
 
-    @Column(name = "VERSION")
-    Long version;
+    @Column(name="VERSION")
+    private Long version;
 
     @Column(name = "COOKIE_VALUE")
     private String cookieValue;
@@ -46,6 +46,7 @@ public User(){}
 
     public Set<Booking> getBookings(){return bookings;}
     public void addBooking(Booking booking){bookings.add(booking);}
+    public void setBooking(Set<Booking> bookings){this.bookings = bookings;}
 
 
 

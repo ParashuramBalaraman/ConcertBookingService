@@ -1,6 +1,7 @@
 package proj.concert.service.services;
 
 import java.net.URI;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -23,8 +24,7 @@ import proj.concert.common.dto.*;
 import proj.concert.service.domain.*;
 import proj.concert.service.domain.mapper.BookingMapper;
 import proj.concert.service.domain.mapper.SeatMapper;
-import proj.concert.common.dto.PerformerDTO;
-import proj.concert.common.dto.UserDTO;
+
 import proj.concert.service.domain.Concert;
 import proj.concert.service.domain.Performer;
 import proj.concert.service.domain.User;
@@ -66,15 +66,34 @@ public class ConcertResource {
         try{
             TypedQuery<Concert> concertQuery = em.createQuery("select c from Concert c", Concert.class);
             List<Concert> concerts = concertQuery.getResultList();
-            return Response.ok(concerts).build();
+            List<ConcertDTO> concertsMapped = new ArrayList<>();
+            for(int i = 0; i < concerts.size(); i++){
+                concertsMapped.add(ConcertMapper.toDTO(concerts.get(i)));
+            }
+            return Response.ok(concertsMapped).build();
         }
         finally{
             em.close();
         }
     }
 
-    public Response getConcertSummaries(){
-        return null;
+    @GET
+    @Path("/concerts/summaries")
+    @Produces((MediaType.APPLICATION_JSON))
+    public Response getConcertSummaries() {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        try{
+            TypedQuery<Concert> concertQuery = em.createQuery("select c from Concert c", Concert.class);
+            List<Concert> concerts = concertQuery.getResultList();
+            List<ConcertSummaryDTO> summariesMapped = new ArrayList<>();
+            for(int i = 0; i < concerts.size(); i++){
+                summariesMapped.add(ConcertMapper.toConcertSummaryDTO(concerts.get(i)));
+            }
+            return Response.ok(summariesMapped).build();
+        }
+        finally {
+            em.close();
+        }
     }
 
     @GET
@@ -104,7 +123,11 @@ public class ConcertResource {
         try{
             TypedQuery<Performer> performerQuery = em.createQuery("select p from Performer p", Performer.class);
             List<Performer> performers = performerQuery.getResultList();
-            return Response.ok(performers).build();
+            List<PerformerDTO> performersMapped = new ArrayList<>();
+            for(int i = 0; i < performers.size(); i++){
+                performersMapped.add(PerformerMapper.toDTO(performers.get(i)));
+            }
+            return Response.ok(performersMapped).build();
         }
         finally{
             em.close();
@@ -121,13 +144,13 @@ public class ConcertResource {
             em.getTransaction().begin();
             TypedQuery<User> userQuery = em.createQuery("select u from User u", User.class);
             List<User> users = userQuery.getResultList();
-            UserMapper um = new UserMapper();
+
             for (User user : users){
                 if (user.getUsername().equals(client.getUsername()) && user.getPassword().equals(client.getPassword())){
                     UUID value = UUID.randomUUID();
                     NewCookie n = new NewCookie("auth", value.toString());
                     user.setCookieValue(n.getValue());
-                    UserDTO us = um.toDTO(user);
+                    UserDTO us = UserMapper.toDTO(user);
                     em.getTransaction().commit();
                     return Response.ok(us).cookie(n).build();
                 }
@@ -146,9 +169,11 @@ public class ConcertResource {
     public Response bookSeats(BookingRequestDTO booking, @CookieParam("auth") Cookie clientID){
         EntityManager em = PersistenceManager.instance().createEntityManager();
         try{
+            //check if anyone logged in
             if (clientID == null){
                 return Response.status(401).build();
             }
+            //work out which user is logged in
             em.getTransaction().begin();
             TypedQuery<User> userQuery = em.createQuery("select u from User u where u.cookieValue like :clientID", User.class)
                     .setParameter("clientID", clientID.getValue()).setMaxResults(1);
@@ -191,13 +216,12 @@ public class ConcertResource {
                             SeatMapper sm = new SeatMapper();
                             for (Seat seat : bSeats){
                                 seat.setIsBooked(true);
-                                SeatDTO seatDTO = sm.toDTO(seat);
+                                SeatDTO seatDTO = SeatMapper.toDTO(seat);
                                 seatDTOS.add(seatDTO);
                             }
                             //Create a new bookingDTO and then convert into a booking object
                             BookingDTO bDTO = new BookingDTO(booking.getConcertId(), booking.getDate(), seatDTOS);
-                            BookingMapper bm = new BookingMapper();
-                            Booking b = bm.toDM(bDTO);
+                            Booking b = BookingMapper.toDM(bDTO);
                             user.addBooking(b);
                             em.getTransaction().commit();
                             return Response.created(URI.create("/concert-service/bookings/" + b.getId())).build();

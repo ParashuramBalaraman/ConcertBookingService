@@ -265,7 +265,32 @@ public class ConcertResource {
         }
     }
 
-    public Response getAllBookings(){return null;}
+    @GET
+    @Path("/bookings")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAllBookings(@CookieParam("auth") Cookie clientID){
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        try{
+            if (clientID != null){
+                em.getTransaction().begin();
+                TypedQuery<User> userQuery = em.createQuery("select u from User u where u.cookieValue like :clientID", User.class)
+                        .setParameter("clientID", clientID.getValue()).setMaxResults(1);
+                List<User> users = userQuery.getResultList();
+                User user = users.get(0);
+                em.getTransaction().commit();
+                List<BookingDTO> bDTOS = new ArrayList<BookingDTO>();
+                for (Booking b : user.getBookings()){
+                    BookingDTO bDTO = BookingMapper.toDTO(b);
+                    bDTOS.add(bDTO);
+                }
+                return Response.ok(bDTOS).build();
+            }
+            return Response.status(401).build();
+        }
+        finally{
+            em.close();
+        }
+    }
 
     public Response getSeatsForDate(Date date, String status){return null;}
 

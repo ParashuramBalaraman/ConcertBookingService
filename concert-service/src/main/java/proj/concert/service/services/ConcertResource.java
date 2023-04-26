@@ -111,18 +111,18 @@ public class ConcertResource {
             em.getTransaction().begin();
             TypedQuery<User> userQuery = em.createQuery("select u from User u", User.class);
             List<User> users = userQuery.getResultList();
-            em.getTransaction().commit();
             UserMapper um = new UserMapper();
             for (User user : users){
                 if (user.getUsername().equals(client.getUsername()) && user.getPassword().equals(client.getPassword())){
                     UUID value = UUID.randomUUID();
                     NewCookie n = new NewCookie("auth", value.toString());
                     user.setCookieValue(n.getValue());
-                    user.setCookieName(n.getName());
                     UserDTO us = um.toDTO(user);
+                    em.getTransaction().commit();
                     return Response.ok(us).cookie(n).build();
                 }
             }
+            em.getTransaction().commit();
             return Response.status(401).build();
         }
         finally{
@@ -136,58 +136,59 @@ public class ConcertResource {
     public Response bookSeats(BookingRequestDTO booking, @CookieParam("auth") Cookie clientID){
         EntityManager em = PersistenceManager.instance().createEntityManager();
         try{
+            if (clientID == null){
+                return Response.status(401).build();
+            }
             em.getTransaction().begin();
-            TypedQuery<User> userQuery = em.createQuery("select u from User u", User.class);
+            System.out.println("validUser");
+            TypedQuery<User> userQuery = em.createQuery("select u from User u where u.cookieValue like :clientID", User.class)
+                    .setParameter("clientID", clientID.getValue()).setMaxResults(1);
+            System.out.println("validUser2");
             List<User> users = userQuery.getResultList();
+            User user = users.get(0);
             em.getTransaction().commit();
-            //Go through all users to see if any are logged in. That will be the user we use to book.
-            for (User user : users){
-                if (clientID.getValue().equals(user.getCookieValue())){
-                    System.out.println(user.getUsername() + " " +  user.getCookieValue());
-                    //Get all concerts
-                    em.getTransaction().begin();
-                    TypedQuery<Concert> concertQuery = em.createQuery("select c from Concert c", Concert.class);
-                    List<Concert> concerts = concertQuery.getResultList();
-                    em.getTransaction().commit();
-                    //Go through all concerts to check that the concertId and concertDate of the booking match an available concert
-                    for (Concert concert : concerts){
-                        if (concert.getId().equals(booking.getConcertId())){
-                            //Go through all dates the concert is on to see if any match with the booking date
-                            for (LocalDateTime date : concert.getDates()){
-                                if (date.equals(booking.getDate())){
-                                    //Go through all the seats to see if the seats looking to be booked are already booked
-                                    em.getTransaction().begin();
-                                    TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.label in :inclList", Seat.class);
-                                    List<Seat> seats = seatQuery.getResultList();
-                                    em.getTransaction().commit();
-                                    for (Seat seat : seats){
-                                        if (seat.getIsBooked()){
-                                            return Response.status(403).build();
-                                        }
-                                    }
-                                    //All seats are available, go back through each seat and change their status to booked
-                                    //Create a new arraylist for seatDTOs then convert all seats in the list to seatDTOs and add them to the list
-                                    List<SeatDTO> seatDTOS = new ArrayList<SeatDTO>();
-                                    SeatMapper sm = new SeatMapper();
-                                    for (Seat seat : seats){
-                                        seat.setIsBooked(true);
-                                        SeatDTO seatDTO = sm.toDTO(seat);
-                                        seatDTOS.add(seatDTO);
-
-                                    }
-                                    //Create a new bookingDTO and then convert into a booking object
-                                    BookingDTO bDTO = new BookingDTO(booking.getConcertId(), booking.getDate(), seatDTOS);
-                                    BookingMapper bm = new BookingMapper();
-                                    Booking b = bm.toDM(bDTO);
-                                    return Response.created(URI.create("/concert-service" + b.getId())).build();
+            System.out.println(user.getUsername() + " " +  user.getCookieValue());
+            //Get all concerts
+            em.getTransaction().begin();
+            TypedQuery<Concert> concertQuery = em.createQuery("select c from Concert c", Concert.class);
+            List<Concert> concerts = concertQuery.getResultList();
+            em.getTransaction().commit();
+            //Go through all concerts to check that the concertId and concertDate of the booking match an available concert
+            for (Concert concert : concerts){
+                if (concert.getId().equals(booking.getConcertId())){
+                    //Go through all dates the concert is on to see if any match with the booking date
+                    for (LocalDateTime date : concert.getDates()){
+                        if (date.equals(booking.getDate())){
+                            //Go through all the seats to see if the seats looking to be booked are already booked
+                            em.getTransaction().begin();
+                            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.label in :inclList", Seat.class)
+                                    .setParameter("inclList", booking.getSeatLabels());
+                            List<Seat> seats = seatQuery.getResultList();
+                            em.getTransaction().commit();
+                            for (Seat seat : seats){
+                                if (seat.getIsBooked()){
+                                    return Response.status(403).build();
                                 }
                             }
+                            //All seats are available, go back through each seat and change their status to booked
+                            //Create a new arraylist for seatDTOs then convert all seats in the list to seatDTOs and add them to the list
+                            List<SeatDTO> seatDTOS = new ArrayList<SeatDTO>();
+                            SeatMapper sm = new SeatMapper();
+                            for (Seat seat : seats){
+                                seat.setIsBooked(true);
+                                SeatDTO seatDTO = sm.toDTO(seat);
+                                seatDTOS.add(seatDTO);
+                            }
+                            //Create a new bookingDTO and then convert into a booking object
+                            BookingDTO bDTO = new BookingDTO(booking.getConcertId(), booking.getDate(), seatDTOS);
+                            BookingMapper bm = new BookingMapper();
+                            Booking b = bm.toDM(bDTO);
+                            return Response.created(URI.create("/concert-service" + b.getId())).build();
                         }
                     }
-                    return Response.status(400).build();
                 }
             }
-            return Response.status(401).build();
+            return Response.status(400).build();
         }
         finally {
             em.close();

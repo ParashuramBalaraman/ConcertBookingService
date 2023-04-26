@@ -1,6 +1,7 @@
 package proj.concert.service.services;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -16,6 +17,8 @@ import javax.persistence.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import proj.concert.common.dto.ConcertDTO;
+import proj.concert.common.dto.ConcertSummaryDTO;
 import proj.concert.common.dto.PerformerDTO;
 import proj.concert.common.dto.UserDTO;
 import proj.concert.service.domain.Concert;
@@ -59,7 +62,11 @@ public class ConcertResource {
         try{
             TypedQuery<Concert> concertQuery = em.createQuery("select c from Concert c", Concert.class);
             List<Concert> concerts = concertQuery.getResultList();
-            return Response.ok(concerts).build();
+            List<ConcertDTO> concertsMapped = new ArrayList<>();
+            for(int i = 0; i < concerts.size(); i++){
+                concertsMapped.add(ConcertMapper.toDTO(concerts.get(i)));
+            }
+            return Response.ok(concertsMapped).build();
         }
         finally{
             em.close();
@@ -73,8 +80,12 @@ public class ConcertResource {
         EntityManager em = PersistenceManager.instance().createEntityManager();
         try{
             TypedQuery<Concert> concertQuery = em.createQuery("select c from Concert c", Concert.class);
-
-            return null;
+            List<Concert> concerts = concertQuery.getResultList();
+            List<ConcertSummaryDTO> summariesMapped = new ArrayList<>();
+            for(int i = 0; i < concerts.size(); i++){
+                summariesMapped.add(ConcertMapper.toConcertSummaryDTO(concerts.get(i)));
+            }
+            return Response.ok(summariesMapped).build();
         }
         finally {
             em.close();
@@ -108,7 +119,11 @@ public class ConcertResource {
         try{
             TypedQuery<Performer> performerQuery = em.createQuery("select p from Performer p", Performer.class);
             List<Performer> performers = performerQuery.getResultList();
-            return Response.ok(performers).build();
+            List<PerformerDTO> performersMapped = new ArrayList<>();
+            for(int i = 0; i < performers.size(); i++){
+                performersMapped.add(PerformerMapper.toDTO(performers.get(i)));
+            }
+            return Response.ok(performersMapped).build();
         }
         finally{
             em.close();

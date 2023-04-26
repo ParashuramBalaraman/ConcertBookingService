@@ -3,10 +3,7 @@ package proj.concert.service.services;
 import java.net.URI;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
@@ -24,6 +21,7 @@ import proj.concert.common.dto.*;
 import proj.concert.service.domain.*;
 import proj.concert.service.domain.mapper.BookingMapper;
 import proj.concert.service.domain.mapper.SeatMapper;
+import proj.concert.service.jaxrs.*;
 
 import proj.concert.service.domain.Concert;
 import proj.concert.service.domain.Performer;
@@ -32,7 +30,6 @@ import proj.concert.service.domain.User;
 import proj.concert.service.domain.mapper.UserMapper;
 import proj.concert.service.domain.mapper.ConcertMapper;
 import proj.concert.service.domain.mapper.PerformerMapper;
-
 
 
 @Path("/concert-service")
@@ -194,7 +191,7 @@ public class ConcertResource {
                             //Go through all the seats to see if the seats looking to be booked are already booked
                             em.getTransaction().begin();
                             //Find the seats that are available on the date of the booking
-                            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.dateTime like :date", Seat.class)
+                            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.dateTime = :date", Seat.class)
                                     .setParameter("date", booking.getDate());
                             List<Seat> seats = seatQuery.getResultList();
                             List<Seat> bSeats = new ArrayList<Seat>();
@@ -292,6 +289,50 @@ public class ConcertResource {
         }
     }
 
-    public Response getSeatsForDate(Date date, String status){return null;}
+    @GET
+    @Path("/seats/{date}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getSeatsForDate(@PathParam("date") LocalDateTimeParam dateParam,
+                                    @QueryParam("status") String status) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        LocalDateTime date = dateParam.getLocalDateTime();
+        try{
+            // Get all seats for the date, booked or unbooked
+            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.dateTime = :dateTime", Seat.class)
+                    .setParameter("dateTime", date);
+            List<Seat> seats = seatQuery.getResultList();
+            switch(status) {
+                // Returns list of seats in accordance to the status
+                case "Any":
+                    List<SeatDTO> anyMapped = new ArrayList<>();
+                    for (Seat seat : seats) {
+                        anyMapped.add(SeatMapper.toDTO(seat));
+                    }
+                    return Response.ok(anyMapped).build();
+
+                case "Booked":
+                    List<SeatDTO> bookedMapped = new ArrayList<>();
+                    for (Seat seat : seats) {
+                        if (seat.getIsBooked() == true){
+                            bookedMapped.add(SeatMapper.toDTO(seat));
+                        }
+                    }
+                    return Response.ok(bookedMapped).build();
+
+                case "Unbooked":
+                    List<SeatDTO> unbookedMapped = new ArrayList<>();
+                    for (Seat seat : seats) {
+                        if(seat.getIsBooked() == false){
+                            unbookedMapped.add(SeatMapper.toDTO(seat));
+                        }
+                    }
+                    return Response.ok(unbookedMapped).build();
+            }
+        }
+        finally{
+            em.close();
+        }
+        return null;
+    }
 
 }

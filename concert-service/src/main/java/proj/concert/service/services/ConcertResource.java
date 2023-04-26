@@ -164,9 +164,8 @@ public class ConcertResource {
                             TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.label in :inclList", Seat.class)
                                     .setParameter("inclList", booking.getSeatLabels());
                             List<Seat> seats = seatQuery.getResultList();
-                            em.getTransaction().commit();
                             for (Seat seat : seats){
-                                if (seat.getIsBooked()){
+                                if (seat.getIsBooked() == true){
                                     return Response.status(403).build();
                                 }
                             }
@@ -183,6 +182,7 @@ public class ConcertResource {
                             BookingDTO bDTO = new BookingDTO(booking.getConcertId(), booking.getDate(), seatDTOS);
                             BookingMapper bm = new BookingMapper();
                             Booking b = bm.toDM(bDTO);
+                            em.getTransaction().commit();
                             return Response.created(URI.create("/concert-service" + b.getId())).build();
                         }
                     }

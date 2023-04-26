@@ -17,6 +17,10 @@ public class Booking {
     private Long id;
 @Column(name="CONCERT_ID")
 private Long concertId;
+
+@Column(name = "COOKIE_VALUE")
+private String cookieValue;
+
 @Column(name="DATETIME")
     private LocalDateTime dateTime;
     @OneToMany(cascade = CascadeType.PERSIST,fetch = FetchType.LAZY)//one to many used as each booking will hold many seats and a seat can only be held by one booking
@@ -39,5 +43,8 @@ public Long getId(){return this.id;}
 
     public Set<Seat> getSeats(){return this.seats;}
     public void setSeats(Set<Seat> seats){this.seats=seats;}
+
+    public String getCookieValue(){return cookieValue;}
+    public void setCookieValue(String cv){cookieValue = cv;}
 
 }

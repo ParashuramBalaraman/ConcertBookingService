@@ -19,7 +19,7 @@ public class Booking {
 private Long concertId;
 @Column(name="DATETIME")
     private LocalDateTime dateTime;
-    @OneToMany(cascade = CascadeType.PERSIST,fetch = FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.PERSIST,fetch = FetchType.LAZY)//one to many used as each booking will hold many seats and a seat can only be held by one booking
     private Set<Seat> seats;
 
     public Booking(){}

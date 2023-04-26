@@ -1,6 +1,7 @@
 package proj.concert.service.services;
 
 import java.net.URI;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -23,8 +24,7 @@ import proj.concert.common.dto.*;
 import proj.concert.service.domain.*;
 import proj.concert.service.domain.mapper.BookingMapper;
 import proj.concert.service.domain.mapper.SeatMapper;
-import proj.concert.common.dto.PerformerDTO;
-import proj.concert.common.dto.UserDTO;
+
 import proj.concert.service.domain.Concert;
 import proj.concert.service.domain.Performer;
 import proj.concert.service.domain.User;
@@ -66,15 +66,34 @@ public class ConcertResource {
         try{
             TypedQuery<Concert> concertQuery = em.createQuery("select c from Concert c", Concert.class);
             List<Concert> concerts = concertQuery.getResultList();
-            return Response.ok(concerts).build();
+            List<ConcertDTO> concertsMapped = new ArrayList<>();
+            for(int i = 0; i < concerts.size(); i++){
+                concertsMapped.add(ConcertMapper.toDTO(concerts.get(i)));
+            }
+            return Response.ok(concertsMapped).build();
         }
         finally{
             em.close();
         }
     }
 
-    public Response getConcertSummaries(){
-        return null;
+    @GET
+    @Path("/concerts/summaries")
+    @Produces((MediaType.APPLICATION_JSON))
+    public Response getConcertSummaries() {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        try{
+            TypedQuery<Concert> concertQuery = em.createQuery("select c from Concert c", Concert.class);
+            List<Concert> concerts = concertQuery.getResultList();
+            List<ConcertSummaryDTO> summariesMapped = new ArrayList<>();
+            for(int i = 0; i < concerts.size(); i++){
+                summariesMapped.add(ConcertMapper.toConcertSummaryDTO(concerts.get(i)));
+            }
+            return Response.ok(summariesMapped).build();
+        }
+        finally {
+            em.close();
+        }
     }
 
     @GET
@@ -104,7 +123,11 @@ public class ConcertResource {
         try{
             TypedQuery<Performer> performerQuery = em.createQuery("select p from Performer p", Performer.class);
             List<Performer> performers = performerQuery.getResultList();
-            return Response.ok(performers).build();
+            List<PerformerDTO> performersMapped = new ArrayList<>();
+            for(int i = 0; i < performers.size(); i++){
+                performersMapped.add(PerformerMapper.toDTO(performers.get(i)));
+            }
+            return Response.ok(performersMapped).build();
         }
         finally{
             em.close();

@@ -334,5 +334,37 @@ public class ConcertResource {
         }
         return null;
     }
+    @GET
+    @Path("/subscribe/concertInfo")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response subscription(ConcertInfoSubscriptionDTO concertInfoSubDTO,@CookieParam("auth") Cookie clientId){
+        //check auth
+
+        //check concertinfosubdto, date and time valid
+
+        //return something
+
+        // need to store subscritpion info either as one to many in user or as it's own seperate thing with a user
+
+
+        return Response.ok().build();
+    }
+
+    @GET
+    @Path("/subscribe/concertInfo")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response publish(ConcertInfoSubscriptionDTO concertInfoSubDTO,@CookieParam("auth") Cookie clientId){
+        //check auth?
+
+        // everytime a booking is made check if conditions of subscription have been met
+
+        //return concertInfoNotificationDto
+
+
+
+
+        return Response.ok().build();
+    }
+
 
 }

@@ -28,6 +28,11 @@ public class User {
     @Column(name = "COOKIE_VALUE")
     private String cookieValue;
 
+
+    @OneToMany(cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)//user can have many subscriptions but a subscription can only belong to one user
+    private Set<Subscription> subscriptions;
+
+
 public User(){}
     public User(String username,String password){
     this.username=username;
@@ -47,6 +52,10 @@ public User(){}
     public Set<Booking> getBookings(){return bookings;}
     public void addBooking(Booking booking){bookings.add(booking);}
     public void setBooking(Set<Booking> bookings){this.bookings = bookings;}
+
+    public Set<Subscription> getSubscriptions(){return subscriptions;}
+    public void addSubscription(Subscription subscription){subscriptions.add(subscription);}
+    public void setSubscriptions(Set<Subscription> subscriptions){this.subscriptions = subscriptions;}
 
 
 

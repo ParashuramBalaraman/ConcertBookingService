@@ -19,17 +19,12 @@ import org.slf4j.LoggerFactory;
 
 import proj.concert.common.dto.*;
 import proj.concert.service.domain.*;
-import proj.concert.service.domain.mapper.BookingMapper;
-import proj.concert.service.domain.mapper.SeatMapper;
+import proj.concert.service.domain.mapper.*;
 import proj.concert.service.jaxrs.*;
 
 import proj.concert.service.domain.Concert;
 import proj.concert.service.domain.Performer;
 import proj.concert.service.domain.User;
-
-import proj.concert.service.domain.mapper.UserMapper;
-import proj.concert.service.domain.mapper.ConcertMapper;
-import proj.concert.service.domain.mapper.PerformerMapper;
 
 
 @Path("/concert-service")
@@ -334,20 +329,49 @@ public class ConcertResource {
         }
         return null;
     }
-    @GET
+    @POST
     @Path("/subscribe/concertInfo")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response subscription(ConcertInfoSubscriptionDTO concertInfoSubDTO,@CookieParam("auth") Cookie clientId){
-        //check auth
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response subscription(ConcertInfoSubscriptionDTO subInfo, @CookieParam("auth") Cookie clientID){
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        try{
+            //check if anyone logged in
+            if (clientID == null){
+                return Response.status(401).build();
+            }
+            //work out which user is logged in
+            em.getTransaction().begin();
+            TypedQuery<User> userQuery = em.createQuery("select u from User u where u.cookieValue like :clientID", User.class)
+                    .setParameter("clientID", clientID.getValue()).setMaxResults(1);
+            List<User> users = userQuery.getResultList();
+            User user = users.get(0);
+            em.getTransaction().commit();
+            //Get all concerts
+            em.getTransaction().begin();
+            TypedQuery<Concert> concertQuery = em.createQuery("select c from Concert c", Concert.class);
+            List<Concert> concerts = concertQuery.getResultList();
+            em.getTransaction().commit();
+            //Go through all concerts to check that the concertId and concertDate of the subscription match an available concert
+            for (Concert concert : concerts){
+                if (concert.getId().equals(subInfo.getConcertId())){
+                    //Go through all dates the concert is on to see if any match with the booking date
+                    for (LocalDateTime date : concert.getDates()){
+                        if(date.equals(subInfo.getDate())){
+                            em.getTransaction().begin();
+                            Subscription sub = SubscriptionMapper.toDM(subInfo);
+                            user.addSubscription(sub);
+                            em.getTransaction().commit();
+                            return Response.ok(subInfo).build();
+                        }
+                    }
 
-        //check concertinfosubdto, date and time valid
-
-        //return something
-
-        // need to store subscritpion info either as one to many in user or as it's own seperate thing with a user
-
-
-        return Response.ok().build();
+                }
+            }
+            return Response.status(400).build();
+        }
+        finally{
+            em.close();
+        }
     }
 
     @GET

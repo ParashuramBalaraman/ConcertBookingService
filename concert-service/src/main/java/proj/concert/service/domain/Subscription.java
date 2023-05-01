@@ -15,7 +15,15 @@ public class Subscription {
     @Column(name="DATETIME")
     private LocalDateTime dateTime;
 
+    @Column(name="PERCENTBOOKED")
+    private int percentBooked;
+
     public Subscription(){}
+    public Subscription(Long concertID,LocalDateTime dateTime,int percentBooked){
+        this.concertId=concertID;
+        this.dateTime = dateTime;
+        this.percentBooked=percentBooked;
+    }
 
     public Long getId(){return this.id;}
     public void setId(Long id){this.id=id;}
@@ -25,4 +33,7 @@ public class Subscription {
 
     public LocalDateTime getDateTime(){return this.dateTime;}
     public void setDateTime(LocalDateTime dateTime){this.dateTime=dateTime;}
+
+    public int getPercentBooked(){return this.percentBooked;}
+    public void setPercentBooked(int percentBooked){this.percentBooked=percentBooked;}
 }

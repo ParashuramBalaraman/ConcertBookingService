@@ -4,6 +4,7 @@ import java.net.URI;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
@@ -29,10 +30,12 @@ import proj.concert.service.domain.Concert;
 import proj.concert.service.domain.Performer;
 import proj.concert.service.domain.User;
 import proj.concert.service.domain.Subscription;
+import proj.concert.service.util.TheatreLayout;
 
 @Path("/concert-service")
 public class ConcertResource {
     private static final Logger logger = LoggerFactory.getLogger(ConcertResource.class);
+    private static final ConcurrentHashMap<LocalDateTime, LinkedList<SubscriptionInfo>> subsInfo = new ConcurrentHashMap<>();
 
     @GET
     @Path("/concerts/{id}")
@@ -218,6 +221,15 @@ public class ConcertResource {
                             BookingDTO bDTO = new BookingDTO(booking.getConcertId(), booking.getDate(), seatDTOS);
                             Booking b = BookingMapper.toDM(bDTO);
                             user.addBooking(b);
+
+                            int freeSeats = em.createQuery("SELECT COUNT(s) FROM Seat s WHERE s.dateTime = :date AND s.isBooked = false", Long.class)
+                                    .setParameter("date", date)
+                                    .getSingleResult()
+                                    .intValue();
+
+
+                            checkWithSubscribers(booking.getConcertId(), date, freeSeats);
+
                             em.getTransaction().commit();
                             return Response.created(URI.create("/concert-service/bookings/" + b.getId())).build();
                         }
@@ -371,21 +383,35 @@ public class ConcertResource {
         }
     }
 
-    @GET
-    @Path("/subscribe/concertInfo")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response publish(ConcertInfoSubscriptionDTO concertInfoSubDTO,@CookieParam("auth") Cookie clientId){
-        //check auth?
+    private void checkWithSubscribers(long concertId, LocalDateTime date, int availableSeats) {
 
-        // everytime a booking is made check if conditions of subscription have been met
-
-        //return concertInfoNotificationDto
+        // get the percentage from the available seats
+        int percentageBooked = 100 - (int)(((double)availableSeats / TheatreLayout.NUM_SEATS_IN_THEATRE) * 100);
 
 
+        // if the key doesn't exist, then return because there are no subscribers for that date/concert
+        if (!subsInfo.containsKey(date)) {
+            return;
+        }
 
+        // iterate through the subscriptions
+        for (Iterator<SubscriptionInfo> it = subsInfo.get(date).iterator(); it.hasNext(); ) {
+            SubscriptionInfo subscriptionInfo = it.next();
 
-        return Response.ok().build();
+            // check if it is the same concert to prevent notifying someone for the same concert.
+            if (subscriptionInfo.getSubInfo().getConcertId() != concertId) {
+
+                return;
+            }
+
+            if (percentageBooked >= subscriptionInfo.getSubInfo().getPercentageBooked()) {
+                // remove the subscriber so they are only updated once which is done in O(1)
+                it.remove();
+
+                // send out the notification.
+                subscriptionInfo.getAsyncResponse().resume(Response.ok(new ConcertInfoNotificationDTO(availableSeats)).build());
+            }
+        }
     }
-
 
 }

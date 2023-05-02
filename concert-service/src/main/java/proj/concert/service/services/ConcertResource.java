@@ -222,12 +222,13 @@ public class ConcertResource {
                             Booking b = BookingMapper.toDM(bDTO);
                             user.addBooking(b);
 
+                            // get number of free seats for notification
                             int freeSeats = em.createQuery("SELECT COUNT(s) FROM Seat s WHERE s.dateTime = :date AND s.isBooked = false", Long.class)
                                     .setParameter("date", date)
                                     .getSingleResult()
                                     .intValue();
 
-
+                            // send out notifications to subs who pass query
                             checkWithSubscribers(booking.getConcertId(), date, freeSeats);
 
                             em.getTransaction().commit();
@@ -374,7 +375,18 @@ public class ConcertResource {
             user.addSubscription(sub);
             em.getTransaction().commit();
             response.resume(Response.ok(subInfo).build());
+
+            // check if the map contains the date, if not, create a new linked list
+            synchronized (subsInfo) {
+                if (!subsInfo.containsKey(subInfo.getDate())) {
+                    subsInfo.put(subInfo.getDate(), new LinkedList<>());
+                }
+            }
+
+            // create a new subscription info object with the information
+            subsInfo.get(subInfo.getDate()).add(new SubscriptionInfo(response, subInfo));
         }
+
         finally{
             if (em.getTransaction().isActive()) {
                 em.getTransaction().commit();
@@ -385,30 +397,28 @@ public class ConcertResource {
 
     private void checkWithSubscribers(long concertId, LocalDateTime date, int availableSeats) {
 
-        // get the percentage from the available seats
-        int percentageBooked = 100 - (int)(((double)availableSeats / TheatreLayout.NUM_SEATS_IN_THEATRE) * 100);
+        // % of available seats
+        double percentageBooked = 1.0 - availableSeats / (double) TheatreLayout.NUM_SEATS_IN_THEATRE;
 
-
-        // if the key doesn't exist, then return because there are no subscribers for that date/concert
+        // check if there are subs for the date/time for concert
         if (!subsInfo.containsKey(date)) {
             return;
         }
 
-        // iterate through the subscriptions
+        // iterate through the subs
         for (Iterator<SubscriptionInfo> it = subsInfo.get(date).iterator(); it.hasNext(); ) {
             SubscriptionInfo subscriptionInfo = it.next();
 
-            // check if it is the same concert to prevent notifying someone for the same concert.
+            // check if it is the same concert to prevent double notifications
             if (subscriptionInfo.getSubInfo().getConcertId() != concertId) {
 
                 return;
             }
-
             if (percentageBooked >= subscriptionInfo.getSubInfo().getPercentageBooked()) {
-                // remove the subscriber so they are only updated once which is done in O(1)
+                // remove the sub so that they are only notified once
                 it.remove();
 
-                // send out the notification.
+                // send out the notification
                 subscriptionInfo.getAsyncResponse().resume(Response.ok(new ConcertInfoNotificationDTO(availableSeats)).build());
             }
         }

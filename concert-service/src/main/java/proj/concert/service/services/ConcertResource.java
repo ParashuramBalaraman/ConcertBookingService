@@ -5,9 +5,12 @@ import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
 
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.*;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -25,7 +28,7 @@ import proj.concert.service.jaxrs.*;
 import proj.concert.service.domain.Concert;
 import proj.concert.service.domain.Performer;
 import proj.concert.service.domain.User;
-
+import proj.concert.service.domain.Subscription;
 
 @Path("/concert-service")
 public class ConcertResource {
@@ -329,47 +332,41 @@ public class ConcertResource {
         }
         return null;
     }
+
     @POST
     @Path("/subscribe/concertInfo")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response subscription(ConcertInfoSubscriptionDTO subInfo, @CookieParam("auth") Cookie clientID){
+    @Produces(MediaType.APPLICATION_JSON)
+    public void subscribeToConcert(@Suspended AsyncResponse response, ConcertInfoSubscriptionDTO subInfo, @CookieParam("auth") Cookie clientID) {
         EntityManager em = PersistenceManager.instance().createEntityManager();
         try{
             //check if anyone logged in
             if (clientID == null){
-                return Response.status(401).build();
+                response.resume(Response.status(401).build());
+                return;
+            }
+            // Validate target concert
+            em.getTransaction().begin();
+            Concert concert = em.find(Concert.class, subInfo.getConcertId(), LockModeType.PESSIMISTIC_READ);
+            if (concert == null || !concert.getDates().contains(subInfo.getDate())) {
+                response.resume(Response.status(400).build());
+                return;
             }
             //work out which user is logged in
-            em.getTransaction().begin();
             TypedQuery<User> userQuery = em.createQuery("select u from User u where u.cookieValue like :clientID", User.class)
                     .setParameter("clientID", clientID.getValue()).setMaxResults(1);
             List<User> users = userQuery.getResultList();
             User user = users.get(0);
-            em.getTransaction().commit();
-            //Get all concerts
-            em.getTransaction().begin();
-            TypedQuery<Concert> concertQuery = em.createQuery("select c from Concert c", Concert.class);
-            List<Concert> concerts = concertQuery.getResultList();
-            em.getTransaction().commit();
-            //Go through all concerts to check that the concertId and concertDate of the subscription match an available concert
-            for (Concert concert : concerts){
-                if (concert.getId().equals(subInfo.getConcertId())){
-                    //Go through all dates the concert is on to see if any match with the booking date
-                    for (LocalDateTime date : concert.getDates()){
-                        if(date.equals(subInfo.getDate())){
-                            em.getTransaction().begin();
-                            Subscription sub = SubscriptionMapper.toDM(subInfo);
-                            user.addSubscription(sub);
-                            em.getTransaction().commit();
-                            return Response.ok(subInfo).build();
-                        }
-                    }
 
-                }
-            }
-            return Response.status(400).build();
+            Subscription sub = SubscriptionMapper.toDM(subInfo);
+            user.addSubscription(sub);
+            em.getTransaction().commit();
+            response.resume(Response.ok(subInfo).build());
         }
         finally{
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().commit();
+            }
             em.close();
         }
     }

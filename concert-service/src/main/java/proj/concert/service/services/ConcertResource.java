@@ -374,7 +374,6 @@ public class ConcertResource {
             Subscription sub = SubscriptionMapper.toDM(subInfo);
             user.addSubscription(sub);
             em.getTransaction().commit();
-            response.resume(Response.ok(subInfo).build());
 
             // check if the map contains the date, if not, create a new linked list
             synchronized (subsInfo) {

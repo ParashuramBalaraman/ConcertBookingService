@@ -353,7 +353,7 @@ public class ConcertResource {
     public void subscribeToConcert(@Suspended AsyncResponse response, ConcertInfoSubscriptionDTO subInfo, @CookieParam("auth") Cookie clientID) {
         EntityManager em = PersistenceManager.instance().createEntityManager();
         try{
-            //check if anyone logged in
+            //check if anyone is logged in
             if (clientID == null){
                 response.resume(Response.status(401).build());
                 return;

@@ -229,7 +229,7 @@ public class ConcertResource {
                                     .intValue();
 
                             // send out notifications to subs who pass query
-                            checkWithSubscribers(booking.getConcertId(), date, freeSeats);
+                            subCheck(booking.getConcertId(), date, freeSeats);
 
                             em.getTransaction().commit();
                             return Response.created(URI.create("/concert-service/bookings/" + b.getId())).build();
@@ -394,31 +394,32 @@ public class ConcertResource {
         }
     }
 
-    private void checkWithSubscribers(long concertId, LocalDateTime date, int availableSeats) {
+    private void subCheck(long concertId, LocalDateTime date, int availableSeats) {
 
-        // % of available seats
-        double percentageBooked = 1.0 - availableSeats / (double) TheatreLayout.NUM_SEATS_IN_THEATRE;
+        // percentage from number of seats
+        double percentageBooked = 100 - (((double)availableSeats / TheatreLayout.NUM_SEATS_IN_THEATRE) * 100);
 
-        // check if there are subs for the date/time for concert
+        // check to ensure there is a concert for the date
         if (!subsInfo.containsKey(date)) {
             return;
         }
 
         // iterate through the subs
-        for (Iterator<SubscriptionInfo> it = subsInfo.get(date).iterator(); it.hasNext(); ) {
-            SubscriptionInfo subscriptionInfo = it.next();
+        for (Iterator<SubscriptionInfo> iter = subsInfo.get(date).iterator(); iter.hasNext(); ) {
+            SubscriptionInfo sub = iter.next();
 
-            // check if it is the same concert to prevent double notifications
-            if (subscriptionInfo.getSubInfo().getConcertId() != concertId) {
-
+            // check to prevent double notifications
+            if (sub.getSubInfo().getConcertId() != concertId) {
                 return;
             }
-            if (percentageBooked >= subscriptionInfo.getSubInfo().getPercentageBooked()) {
-                // remove the sub so that they are only notified once
-                it.remove();
 
-                // send out the notification
-                subscriptionInfo.getAsyncResponse().resume(Response.ok(new ConcertInfoNotificationDTO(availableSeats)).build());
+            if (percentageBooked >= sub.getSubInfo().getPercentageBooked()) {
+
+                // remove the sub
+                iter.remove();
+
+                // send notification to subs
+                sub.getAsyncResponse().resume(Response.ok(new ConcertInfoNotificationDTO(availableSeats)).build());
             }
         }
     }

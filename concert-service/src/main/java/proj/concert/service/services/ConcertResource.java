@@ -4,10 +4,14 @@ import java.net.URI;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
+import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
 
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.*;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -19,22 +23,19 @@ import org.slf4j.LoggerFactory;
 
 import proj.concert.common.dto.*;
 import proj.concert.service.domain.*;
-import proj.concert.service.domain.mapper.BookingMapper;
-import proj.concert.service.domain.mapper.SeatMapper;
+import proj.concert.service.domain.mapper.*;
 import proj.concert.service.jaxrs.*;
 
 import proj.concert.service.domain.Concert;
 import proj.concert.service.domain.Performer;
 import proj.concert.service.domain.User;
-
-import proj.concert.service.domain.mapper.UserMapper;
-import proj.concert.service.domain.mapper.ConcertMapper;
-import proj.concert.service.domain.mapper.PerformerMapper;
-
+import proj.concert.service.domain.Subscription;
+import proj.concert.service.util.TheatreLayout;
 
 @Path("/concert-service")
 public class ConcertResource {
     private static final Logger logger = LoggerFactory.getLogger(ConcertResource.class);
+    private static final ConcurrentHashMap<LocalDateTime, LinkedList<SubscriptionInfo>> subsInfo = new ConcurrentHashMap<>();
 
     @GET
     @Path("/concerts/{id}")
@@ -220,6 +221,16 @@ public class ConcertResource {
                             BookingDTO bDTO = new BookingDTO(booking.getConcertId(), booking.getDate(), seatDTOS);
                             Booking b = BookingMapper.toDM(bDTO);
                             user.addBooking(b);
+
+                            // get number of free seats for notification
+                            int freeSeats = em.createQuery("SELECT COUNT(s) FROM Seat s WHERE s.dateTime = :date AND s.isBooked = false", Long.class)
+                                    .setParameter("date", date)
+                                    .getSingleResult()
+                                    .intValue();
+
+                            // send out notifications to subs who pass query
+                            subCheck(booking.getConcertId(), date, freeSeats);
+
                             em.getTransaction().commit();
                             return Response.created(URI.create("/concert-service/bookings/" + b.getId())).build();
                         }
@@ -334,37 +345,83 @@ public class ConcertResource {
         }
         return null;
     }
-    @GET
+
+    @POST
     @Path("/subscribe/concertInfo")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response subscription(ConcertInfoSubscriptionDTO concertInfoSubDTO,@CookieParam("auth") Cookie clientId){
-        //check auth
+    public void subscribeToConcert(@Suspended AsyncResponse response, ConcertInfoSubscriptionDTO subInfo, @CookieParam("auth") Cookie clientID) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        try{
+            //check if anyone is logged in
+            if (clientID == null){
+                response.resume(Response.status(401).build());
+                return;
+            }
+            // Validate target concert
+            em.getTransaction().begin();
+            Concert concert = em.find(Concert.class, subInfo.getConcertId(), LockModeType.PESSIMISTIC_READ);
+            if (concert == null || !concert.getDates().contains(subInfo.getDate())) {
+                response.resume(Response.status(400).build());
+                return;
+            }
+            //work out which user is logged in
+            TypedQuery<User> userQuery = em.createQuery("select u from User u where u.cookieValue like :clientID", User.class)
+                    .setParameter("clientID", clientID.getValue()).setMaxResults(1);
+            List<User> users = userQuery.getResultList();
+            User user = users.get(0);
 
-        //check concertinfosubdto, date and time valid
+            Subscription sub = SubscriptionMapper.toDM(subInfo);
+            user.addSubscription(sub);
+            em.getTransaction().commit();
 
-        //return something
+            // check if the map contains the date, if not, create a new linked list
+            synchronized (subsInfo) {
+                if (!subsInfo.containsKey(subInfo.getDate())) {
+                    subsInfo.put(subInfo.getDate(), new LinkedList<>());
+                }
+            }
 
-        // need to store subscritpion info either as one to many in user or as it's own seperate thing with a user
+            // create a new subscription info object with the information
+            subsInfo.get(subInfo.getDate()).add(new SubscriptionInfo(response, subInfo));
+        }
 
-
-        return Response.ok().build();
+        finally{
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().commit();
+            }
+            em.close();
+        }
     }
 
-    @GET
-    @Path("/subscribe/concertInfo")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response publish(ConcertInfoSubscriptionDTO concertInfoSubDTO,@CookieParam("auth") Cookie clientId){
-        //check auth?
+    private void subCheck(long concertId, LocalDateTime date, int availableSeats) {
 
-        // everytime a booking is made check if conditions of subscription have been met
+        // percentage from number of seats
+        double percentageBooked = 100 - (((double)availableSeats / TheatreLayout.NUM_SEATS_IN_THEATRE) * 100);
 
-        //return concertInfoNotificationDto
+        // check to ensure there is a concert for the date
+        if (!subsInfo.containsKey(date)) {
+            return;
+        }
 
+        // iterate through the subs
+        for (Iterator<SubscriptionInfo> iter = subsInfo.get(date).iterator(); iter.hasNext(); ) {
+            SubscriptionInfo sub = iter.next();
 
+            // check to prevent double notifications
+            if (sub.getSubInfo().getConcertId() != concertId) {
+                return;
+            }
 
+            if (percentageBooked >= sub.getSubInfo().getPercentageBooked()) {
 
-        return Response.ok().build();
+                // remove the sub
+                iter.remove();
+
+                // send notification to subs
+                sub.getAsyncResponse().resume(Response.ok(new ConcertInfoNotificationDTO(availableSeats)).build());
+            }
+        }
     }
-
 
 }

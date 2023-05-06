@@ -19,7 +19,7 @@ public class User {
     //in an ideal world the password would be hashed and not strored as plain text but that seems outside the scope of the project.
     private String password;
 
-    @OneToMany(cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)//user can have many bookings but a booking can only belong to one user
+    @OneToMany(cascade = {CascadeType.PERSIST,CascadeType.REMOVE},orphanRemoval = true,fetch = FetchType.LAZY)//user can have many bookings but a booking can only belong to one user
     private Set<Booking> bookings;
 
     @Column(name="VERSION")
@@ -29,7 +29,7 @@ public class User {
     private String cookieValue;
 
 
-    @OneToMany(cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)//user can have many subscriptions but a subscription can only belong to one user
+    @OneToMany(cascade = {CascadeType.PERSIST,CascadeType.REMOVE},orphanRemoval = true,fetch = FetchType.LAZY)//user can have many subscriptions but a subscription can only belong to one user
     private Set<Subscription> subscriptions;
 
 

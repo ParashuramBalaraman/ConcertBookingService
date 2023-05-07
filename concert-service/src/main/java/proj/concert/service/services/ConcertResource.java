@@ -14,7 +14,6 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.*;
 import javax.persistence.EntityManager;
-import javax.persistence.Query;
 
 
 import org.slf4j.Logger;
@@ -200,7 +199,7 @@ public class ConcertResource {
                             for (Seat seat : seats){
                                 for (String label : booking.getSeatLabels()){
                                     if (seat.getLabel().equals(label)){
-                                        if (seat.getIsBooked() == true){
+                                        if (seat.getIsBooked()){
                                             return Response.status(403).build();
                                         }
                                         bSeats.add(seat);
@@ -211,7 +210,6 @@ public class ConcertResource {
                             //All seats are available, go back through each seat and change their status to booked
                             //Create a new arraylist for seatDTOs then convert all seats in the list to seatDTOs and add them to the list
                             List<SeatDTO> seatDTOS = new ArrayList<SeatDTO>();
-                            SeatMapper sm = new SeatMapper();
                             for (Seat seat : bSeats){
                                 seat.setIsBooked(true);
                                 SeatDTO seatDTO = SeatMapper.toDTO(seat);
@@ -222,13 +220,13 @@ public class ConcertResource {
                             Booking b = BookingMapper.toDM(bDTO);
                             user.addBooking(b);
 
-                            // get number of free seats for notification
+                            // Get number of free seats for notification
                             int freeSeats = em.createQuery("SELECT COUNT(s) FROM Seat s WHERE s.dateTime = :date AND s.isBooked = false", Long.class)
                                     .setParameter("date", date)
                                     .getSingleResult()
                                     .intValue();
 
-                            // send out notifications to subs who pass query
+                            // Send out notifications to subs who pass query
                             subCheck(booking.getConcertId(), date, freeSeats);
 
                             em.getTransaction().commit();

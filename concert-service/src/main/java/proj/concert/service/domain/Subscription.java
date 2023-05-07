@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Table(name="SUBSCRIPTIONS")
 public class Subscription {
     @Id
-    @GeneratedValue()
+    @GeneratedValue
     @Column(name="ID")
     private Long id;
     @Column(name="CONCERTID")

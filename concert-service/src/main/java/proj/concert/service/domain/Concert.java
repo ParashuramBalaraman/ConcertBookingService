@@ -26,9 +26,10 @@ public class Concert {
     private String blurb;
 
     //can use element collection for handling date relation as it isn't an entity
-    @ElementCollection(fetch=FetchType.EAGER)//want to get all associated dates when found initially
+    @ElementCollection//want to get all associated dates when found initially
     @CollectionTable(name = "CONCERT_DATES",joinColumns = @JoinColumn(name="CONCERT_ID"))//date tied to primary key of concert
     @Column(name="DATE")
+    @Fetch(FetchMode.SUBSELECT)
     private Set<LocalDateTime> dates = new HashSet<>();
     @ManyToMany(cascade =CascadeType.PERSIST)//concerts can have many performers and performers can be attatched to mulitple concerts
     @JoinTable(name = "CONCERT_PERFORMER",joinColumns = @JoinColumn(name= "CONCERT_ID"),inverseJoinColumns = @JoinColumn(name = "PERFORMER_ID"))//link the two primary key columns
